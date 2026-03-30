@@ -1,0 +1,1 @@
+plan of making app
