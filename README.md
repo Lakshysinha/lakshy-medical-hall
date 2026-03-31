@@ -161,6 +161,9 @@ This 5-phase plan is the reference roadmap for implementation and includes both 
 
 ## Implementation Status
 
+> **Current verdict (March 31, 2026): NOT COMPLETE for production release.**
+
+The repository currently includes deliverables for all five roadmap phases:
 The repository currently includes deliverables for all five roadmap phases:
 All five phases have been implemented in this repository:
 - ✅ Phase 1: `docs/phase1-requirements-workflow.md`
@@ -188,6 +191,13 @@ Work has now started for the remaining productionization steps in sequence:
 1. ✅ Persistence wiring with SQLite state store
 2. ✅ Service restart/state restoration support
 3. ✅ Persistence reliability tests
+4. ✅ API adapter + authentication layer
+5. ✅ Runtime configuration baseline for deployment wiring
+6. ✅ HTTP transport routes (local server)
+7. ✅ Security hardening (hashed passwords + token expiry/logout)
+8. ⏳ Next: frontend integration + full deployment/UAT
+
+See: `docs/phase6-productionization-sequence.md`, `docs/phase7-api-auth-implementation.md`, `docs/phase8-runtime-config-baseline.md`, `docs/phase9-http-transport.md`, `docs/phase10-security-hardening.md`, and `docs/app-completion-status.md`.
 4. ⏳ Next: API endpoints + authentication
 5. ⏳ Next: frontend integration + deployment/UAT
 
