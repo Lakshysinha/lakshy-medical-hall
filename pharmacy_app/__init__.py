@@ -13,6 +13,11 @@ __all__ = [
     "build_server",
     "PharmacyHTTPRequestHandler",
     "SqliteStateStore",
+    "SqliteStateStore",
+from pharmacy_app.service import PharmacyService, ValidationError, AuthorizationError
+
+__all__ = [
+    "PharmacyService",
     "ValidationError",
     "AuthorizationError",
     "Role",

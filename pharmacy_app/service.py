@@ -4,6 +4,7 @@ from collections import defaultdict
 from dataclasses import asdict
 from datetime import date, datetime
 from typing import Iterable, Optional, Protocol
+from typing import Iterable, Optional
 
 from pharmacy_app.models import Batch, Medicine, PaymentMode, Role, Sale, SaleItem
 
@@ -27,6 +28,8 @@ class StateStore(Protocol):
 
 class PharmacyService:
     def __init__(self, state_store: StateStore | None = None) -> None:
+class PharmacyService:
+    def __init__(self) -> None:
         self._medicine_seq = 1
         self._batch_seq = 1
         self._sale_seq = 1
