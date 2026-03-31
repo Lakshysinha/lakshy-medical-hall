@@ -1,0 +1,20 @@
+{
+  "database": {
+    "sqlite_path": "./data/pharmacy.db"
+  },
+  "auth": {
+    "users": {
+      "owner": {
+        "password": "change-me-owner",
+        "role": "owner_admin"
+      },
+      "billing": {
+        "password": "change-me-billing",
+        "role": "staff_billing"
+      }
+    }
+  },
+  "inventory": {
+    "low_stock_threshold": 3
+  }
+}
