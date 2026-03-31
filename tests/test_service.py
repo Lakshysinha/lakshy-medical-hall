@@ -4,6 +4,9 @@ import tempfile
 import unittest
 
 from pharmacy_app import PaymentMode, PharmacyService, Role, SqliteStateStore, ValidationError
+import unittest
+
+from pharmacy_app import PaymentMode, PharmacyService, Role, ValidationError
 
 
 class PharmacyServiceTests(unittest.TestCase):
