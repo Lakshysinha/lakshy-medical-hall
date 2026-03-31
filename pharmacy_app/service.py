@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import asdict
 from datetime import date, datetime
+from typing import Iterable, Optional, Protocol
 from typing import Iterable, Optional
 
 from pharmacy_app.models import Batch, Medicine, PaymentMode, Role, Sale, SaleItem
@@ -19,6 +20,14 @@ class AuthorizationError(PermissionError):
     """Raised when role cannot perform an operation."""
 
 
+class StateStore(Protocol):
+    def load(self) -> dict | None: ...
+
+    def save(self, state: dict) -> None: ...
+
+
+class PharmacyService:
+    def __init__(self, state_store: StateStore | None = None) -> None:
 class PharmacyService:
     def __init__(self) -> None:
         self._medicine_seq = 1
@@ -29,6 +38,8 @@ class PharmacyService:
         self.sales: dict[int, Sale] = {}
         self.audit_logs: list[dict] = []
         self._code_map: dict[str, int] = {}
+        self._state_store = state_store
+        self._load_state()
 
     def _authorize(self, role: Role, allowed: Iterable[Role]) -> None:
         if role not in set(allowed):
@@ -57,6 +68,7 @@ class PharmacyService:
         self.medicines[self._medicine_seq] = medicine
         self._code_map[code_value] = medicine.medicine_id
         self._medicine_seq += 1
+        self._persist_state()
         return medicine
 
     def add_batch(
@@ -90,6 +102,7 @@ class PharmacyService:
         self.batches[self._batch_seq] = batch
         self._batch_seq += 1
         self._log("add_batch", {"batch_id": batch.batch_id, "medicine_id": medicine_id})
+        self._persist_state()
         return batch
 
     def search_medicine(self, query: str) -> dict:
@@ -166,6 +179,7 @@ class PharmacyService:
         self.sales[self._sale_seq] = sale
         self._sale_seq += 1
         self._log("create_sale", {"sale_id": sale.sale_id, "payment_mode": payment_mode.value})
+        self._persist_state()
         return sale
 
     def daily_summary(self, day: date) -> dict:
@@ -205,3 +219,76 @@ class PharmacyService:
                 "timestamp": datetime.utcnow().isoformat(),
             }
         )
+
+    def _load_state(self) -> None:
+        if self._state_store is None:
+            return
+        state = self._state_store.load()
+        if not state:
+            return
+
+        self._medicine_seq = state["sequences"]["medicine"]
+        self._batch_seq = state["sequences"]["batch"]
+        self._sale_seq = state["sequences"]["sale"]
+        self.medicines = {
+            int(item["medicine_id"]): Medicine(**item) for item in state["medicines"]
+        }
+        self.batches = {
+            int(item["batch_id"]): Batch(
+                batch_id=item["batch_id"],
+                medicine_id=item["medicine_id"],
+                batch_no=item["batch_no"],
+                mfg_date=date.fromisoformat(item["mfg_date"]),
+                exp_date=date.fromisoformat(item["exp_date"]),
+                quantity=item["quantity"],
+                rate=item["rate"],
+            )
+            for item in state["batches"]
+        }
+        self.sales = {
+            int(item["sale_id"]): Sale(
+                sale_id=item["sale_id"],
+                created_at=datetime.fromisoformat(item["created_at"]),
+                payment_mode=PaymentMode(item["payment_mode"]),
+                customer_name=item["customer_name"],
+                items=[SaleItem(**sale_item) for sale_item in item["items"]],
+            )
+            for item in state["sales"]
+        }
+        self.audit_logs = state["audit_logs"]
+        self._code_map = state["code_map"]
+
+    def _serialize_state(self) -> dict:
+        return {
+            "sequences": {
+                "medicine": self._medicine_seq,
+                "batch": self._batch_seq,
+                "sale": self._sale_seq,
+            },
+            "medicines": [asdict(m) for m in self.medicines.values()],
+            "batches": [
+                {
+                    **asdict(b),
+                    "mfg_date": b.mfg_date.isoformat(),
+                    "exp_date": b.exp_date.isoformat(),
+                }
+                for b in self.batches.values()
+            ],
+            "sales": [
+                {
+                    "sale_id": s.sale_id,
+                    "created_at": s.created_at.isoformat(),
+                    "payment_mode": s.payment_mode.value,
+                    "customer_name": s.customer_name,
+                    "items": [asdict(item) for item in s.items],
+                }
+                for s in self.sales.values()
+            ],
+            "audit_logs": self.audit_logs,
+            "code_map": self._code_map,
+        }
+
+    def _persist_state(self) -> None:
+        if self._state_store is None:
+            return
+        self._state_store.save(self._serialize_state())
